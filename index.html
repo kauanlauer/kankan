@@ -3,83 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kanban Faculdade</title>
+    <title>Kanban · Trabalhos Acadêmicos</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="light-mode">
     <header>
-        <h1>Kanban Faculdade</h1>
-        <div class="header-actions">
-            <button id="theme-toggle" class="theme-toggle">
-                <i class="fas fa-moon"></i>
-            </button>
-            <button id="add-task-btn" class="add-btn">+ Novo Trabalho</button>
+        <div class="container header-container">
+            <h1>Kanban Kauan Lauer<span class="dot">.</span></h1>
+            <div class="header-actions">
+                <button id="theme-toggle" class="theme-toggle" aria-label="Alternar tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="add-task-btn" class="primary-btn">
+                    <i class="fas fa-plus"></i>
+                    <span>Novo trabalho</span>
+                </button>
+            </div>
         </div>
     </header>
 
-    <main class="board">
-        <div class="column" id="nao_comecou">
-            <h2>Não Começou</h2>
-            <div class="tasks-container"></div>
-        </div>
-        <div class="column" id="em_andamento">
-            <h2>Em Andamento</h2>
-            <div class="tasks-container"></div>
-        </div>
-        <div class="column" id="finalizado">
-            <h2>Finalizado</h2>
-            <div class="tasks-container"></div>
+    <main>
+        <div class="container board-container">
+            <div class="board">
+                <div class="column" id="nao_comecou">
+                    <div class="column-header">
+                        <h2>Pendente</h2>
+                        <div class="column-count" id="nao_comecou-count">0</div>
+                    </div>
+                    <div class="tasks-container"></div>
+                </div>
+                
+                <div class="column" id="em_andamento">
+                    <div class="column-header">
+                        <h2>Em progresso</h2>
+                        <div class="column-count" id="em_andamento-count">0</div>
+                    </div>
+                    <div class="tasks-container"></div>
+                </div>
+                
+                <div class="column" id="finalizado">
+                    <div class="column-header">
+                        <h2>Concluído</h2>
+                        <div class="column-count" id="finalizado-count">0</div>
+                    </div>
+                    <div class="tasks-container"></div>
+                </div>
+            </div>
         </div>
     </main>
 
     <!-- Modal para adicionar/editar trabalho -->
-    <div class="modal" id="task-modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2 id="modal-title">Novo Trabalho</h2>
+    <div class="modal-overlay" id="task-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Novo trabalho</h3>
+                <button class="close-btn" aria-label="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
             <form id="task-form">
                 <input type="hidden" id="task-id">
+                
                 <div class="form-group">
-                    <label for="materia">Matéria:</label>
-                    <input type="text" id="materia" required>
+                    <label for="materia">Matéria</label>
+                    <input type="text" id="materia" required placeholder="Ex: Cálculo II">
                 </div>
+                
                 <div class="form-group">
-                    <label for="titulo">Título:</label>
-                    <input type="text" id="titulo" required>
+                    <label for="titulo">Título</label>
+                    <input type="text" id="titulo" required placeholder="Ex: Relatório de Laboratório">
                 </div>
+                
                 <div class="form-group">
-                    <label for="descricao">Descrição:</label>
-                    <textarea id="descricao"></textarea>
+                    <label for="descricao">Descrição</label>
+                    <textarea id="descricao" placeholder="Detalhes sobre o trabalho..."></textarea>
                 </div>
-                <div class="form-group">
-                    <label for="status">Status:</label>
-                    <select id="status">
-                        <option value="nao_comecou">Não Começou</option>
-                        <option value="em_andamento">Em Andamento</option>
-                        <option value="finalizado">Finalizado</option>
-                    </select>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status">
+                            <option value="nao_comecou">Pendente</option>
+                            <option value="em_andamento">Em progresso</option>
+                            <option value="finalizado">Concluído</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="data-entrega">Data de entrega</label>
+                        <input type="datetime-local" id="data-entrega">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="data-entrega">Data de Entrega:</label>
-                    <input type="datetime-local" id="data-entrega">
-                </div>
+                
                 <div class="form-actions">
-                    <button type="submit" class="save-btn">Salvar</button>
-                    <button type="button" class="cancel-btn" id="cancel-btn">Cancelar</button>
+                    <button type="button" class="secondary-btn" id="cancel-btn">Cancelar</button>
+                    <button type="submit" class="primary-btn">Salvar</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal de confirmação para exclusão -->
-    <div class="modal" id="confirm-modal">
-        <div class="modal-content">
-            <h2>Confirmação</h2>
-            <p>Tem certeza que deseja excluir este trabalho?</p>
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal confirm-modal">
+            <div class="modal-header">
+                <h3>Excluir trabalho</h3>
+                <button class="close-btn" id="close-confirm" aria-label="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="confirm-content">
+                <p>Tem certeza que deseja excluir este trabalho?</p>
+                <p class="warning-text">Esta ação não pode ser desfeita.</p>
+            </div>
             <div class="form-actions">
-                <button id="confirm-delete" class="delete-btn">Sim, excluir</button>
-                <button id="cancel-delete" class="cancel-btn">Cancelar</button>
+                <button id="cancel-delete" class="secondary-btn">Cancelar</button>
+                <button id="confirm-delete" class="danger-btn">Excluir</button>
             </div>
         </div>
     </div>

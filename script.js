@@ -7,46 +7,62 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 const addTaskBtn = document.getElementById('add-task-btn');
 const taskModal = document.getElementById('task-modal');
 const confirmModal = document.getElementById('confirm-modal');
-const closeBtn = document.querySelector('.close');
+const closeButtons = document.querySelectorAll('.close-btn');
 const themeToggle = document.getElementById('theme-toggle');
 const taskForm = document.getElementById('task-form');
 const cancelBtn = document.getElementById('cancel-btn');
 const confirmDeleteBtn = document.getElementById('confirm-delete');
 const cancelDeleteBtn = document.getElementById('cancel-delete');
+const closeConfirmBtn = document.getElementById('close-confirm');
 
 // Variáveis globais
 let currentTaskId = null;
 let deleteTaskId = null;
 
-// Manipuladores de eventos
+// Inicialização da aplicação
 document.addEventListener('DOMContentLoaded', () => {
-    loadTasks();
+    initializeApp();
+});
+
+async function initializeApp() {
     loadTheme();
     setupEventListeners();
     setupDragAndDrop();
-});
+    await loadTasks();
+    updateColumnCounts();
+}
 
+// Configuração dos event listeners
 function setupEventListeners() {
-    // Evento para abrir o modal de novo trabalho
-    addTaskBtn.addEventListener('click', () => {
-        openTaskModal();
+    // Botão de adicionar tarefa
+    addTaskBtn.addEventListener('click', () => openTaskModal());
+    
+    // Fechamento de modais
+    closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            taskModal.style.display = 'none';
+            confirmModal.style.display = 'none';
+        });
     });
-
-    // Evento para fechar o modal
-    closeBtn.addEventListener('click', closeTaskModal);
-    cancelBtn.addEventListener('click', closeTaskModal);
-
-    // Evento para alternar entre temas claro e escuro
+    
+    cancelBtn.addEventListener('click', () => taskModal.style.display = 'none');
+    cancelDeleteBtn.addEventListener('click', () => confirmModal.style.display = 'none');
+    closeConfirmBtn.addEventListener('click', () => confirmModal.style.display = 'none');
+    
+    // Clique fora do modal para fechar
+    window.addEventListener('click', (e) => {
+        if (e.target === taskModal) taskModal.style.display = 'none';
+        if (e.target === confirmModal) confirmModal.style.display = 'none';
+    });
+    
+    // Tema
     themeToggle.addEventListener('click', toggleTheme);
-
-    // Evento para salvar um trabalho
+    
+    // Formulário
     taskForm.addEventListener('submit', saveTask);
-
-    // Eventos para confirmação de exclusão
+    
+    // Exclusão
     confirmDeleteBtn.addEventListener('click', deleteTask);
-    cancelDeleteBtn.addEventListener('click', () => {
-        confirmModal.style.display = 'none';
-    });
 }
 
 // Carrega os trabalhos do Supabase
@@ -70,10 +86,28 @@ async function loadTasks() {
                 addTaskCard(task);
             });
         }
+        
+        return data || [];
     } catch (error) {
         console.error('Erro ao carregar trabalhos:', error);
-        alert('Não foi possível carregar os trabalhos. Verifique se a tabela "trabalhos" existe no Supabase.');
+        showToast('Erro ao carregar os trabalhos. Verifique a conexão.', 'error');
+        return [];
     }
+}
+
+// Atualiza contadores das colunas
+function updateColumnCounts() {
+    const statuses = ['nao_comecou', 'em_andamento', 'finalizado'];
+    
+    statuses.forEach(status => {
+        const container = document.querySelector(`#${status} .tasks-container`);
+        const countElement = document.getElementById(`${status}-count`);
+        
+        if (container && countElement) {
+            const taskCount = container.querySelectorAll('.task-card').length;
+            countElement.textContent = taskCount;
+        }
+    });
 }
 
 // Adiciona um card de trabalho ao kanban
@@ -89,23 +123,26 @@ function addTaskCard(task) {
     taskCard.dataset.id = task.id;
     taskCard.draggable = true;
     
+    // Limitar descrição para exibição
+    const description = task.descricao ? task.descricao : '';
+    
     taskCard.innerHTML = `
         <div class="task-header">
-            <span class="materia">${task.materia}</span>
+            <span class="materia" title="${task.materia}">${task.materia}</span>
             <div class="task-actions">
-                <button class="edit-btn" onclick="editTask(${task.id})">
-                    <i class="fas fa-edit"></i>
+                <button class="edit-btn" title="Editar" onclick="editTask(${task.id})">
+                    <i class="fas fa-pencil-alt"></i>
                 </button>
-                <button class="delete-btn" onclick="confirmDeleteTask(${task.id})">
-                    <i class="fas fa-trash"></i>
+                <button class="delete-btn" title="Excluir" onclick="confirmDeleteTask(${task.id})">
+                    <i class="fas fa-trash-alt"></i>
                 </button>
             </div>
         </div>
         <div class="task-title">${task.titulo}</div>
-        <div class="task-description">${task.descricao || ''}</div>
+        ${description ? `<div class="task-description">${description}</div>` : ''}
         <div class="task-footer">
             ${task.data_entrega ? `
-                <div class="task-date">
+                <div class="task-date" title="${formatDateLong(task.data_entrega)}">
                     <i class="far fa-calendar-alt"></i>
                     ${formatDate(task.data_entrega)}
                 </div>
@@ -119,8 +156,17 @@ function addTaskCard(task) {
     container.appendChild(taskCard);
 }
 
-// Formata a data para exibição
+// Formata a data para exibição abreviada
 function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', { 
+        day: '2-digit', 
+        month: '2-digit'
+    });
+}
+
+// Formata a data para exibição completa
+function formatDateLong(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR', { 
         day: '2-digit', 
@@ -131,9 +177,9 @@ function formatDate(dateString) {
     });
 }
 
-// Abre o modal para adicionar um novo trabalho
+// Abre o modal para adicionar ou editar um trabalho
 function openTaskModal(taskId = null) {
-    document.getElementById('modal-title').textContent = taskId ? 'Editar Trabalho' : 'Novo Trabalho';
+    document.getElementById('modal-title').textContent = taskId ? 'Editar trabalho' : 'Novo trabalho';
     document.getElementById('task-id').value = taskId || '';
     taskForm.reset();
     
@@ -146,6 +192,11 @@ function openTaskModal(taskId = null) {
     }
     
     taskModal.style.display = 'block';
+    
+    // Foca no primeiro campo
+    setTimeout(() => {
+        document.getElementById('materia').focus();
+    }, 100);
 }
 
 // Carrega os dados de um trabalho para edição
@@ -172,16 +223,9 @@ async function loadTaskData(taskId) {
         }
     } catch (error) {
         console.error('Erro ao carregar dados do trabalho:', error);
-        alert('Não foi possível carregar os dados do trabalho.');
-        closeTaskModal();
+        showToast('Erro ao carregar os dados do trabalho.', 'error');
+        taskModal.style.display = 'none';
     }
-}
-
-// Fecha o modal de trabalho
-function closeTaskModal() {
-    taskModal.style.display = 'none';
-    taskForm.reset();
-    currentTaskId = null;
 }
 
 // Salva um trabalho (cria ou atualiza)
@@ -189,9 +233,9 @@ async function saveTask(e) {
     e.preventDefault();
     
     const taskId = document.getElementById('task-id').value;
-    const materia = document.getElementById('materia').value;
-    const titulo = document.getElementById('titulo').value;
-    const descricao = document.getElementById('descricao').value;
+    const materia = document.getElementById('materia').value.trim();
+    const titulo = document.getElementById('titulo').value.trim();
+    const descricao = document.getElementById('descricao').value.trim();
     const status = document.getElementById('status').value;
     const dataEntrega = document.getElementById('data-entrega').value;
     
@@ -221,21 +265,28 @@ async function saveTask(e) {
         
         if (response.error) throw response.error;
         
-        closeTaskModal();
-        loadTasks();
+        taskModal.style.display = 'none';
+        
+        // Recarrega os trabalhos e atualiza contadores
+        await loadTasks();
+        updateColumnCounts();
+        
+        showToast(taskId ? 'Trabalho atualizado com sucesso.' : 'Novo trabalho adicionado.', 'success');
     } catch (error) {
         console.error('Erro ao salvar trabalho:', error);
-        alert('Não foi possível salvar o trabalho. Tente novamente.');
+        showToast('Não foi possível salvar o trabalho.', 'error');
     }
 }
 
 // Prepara para editar um trabalho
 function editTask(taskId) {
+    event.stopPropagation();
     openTaskModal(taskId);
 }
 
 // Abre o modal de confirmação de exclusão
 function confirmDeleteTask(taskId) {
+    event.stopPropagation();
     deleteTaskId = taskId;
     confirmModal.style.display = 'block';
 }
@@ -254,10 +305,15 @@ async function deleteTask() {
         
         confirmModal.style.display = 'none';
         deleteTaskId = null;
-        loadTasks();
+        
+        // Recarrega os trabalhos e atualiza contadores
+        await loadTasks();
+        updateColumnCounts();
+        
+        showToast('Trabalho excluído com sucesso.', 'success');
     } catch (error) {
         console.error('Erro ao excluir trabalho:', error);
-        alert('Não foi possível excluir o trabalho.');
+        showToast('Não foi possível excluir o trabalho.', 'error');
     }
 }
 
@@ -304,6 +360,8 @@ let draggedTask = null;
 function setupDragAndDrop() {
     document.querySelectorAll('.column').forEach(column => {
         column.addEventListener('dragover', handleDragOver);
+        column.addEventListener('dragenter', handleDragEnter);
+        column.addEventListener('dragleave', handleDragLeave);
         column.addEventListener('drop', handleDrop);
     });
 }
@@ -312,6 +370,10 @@ function handleDragStart(e) {
     draggedTask = e.target;
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', draggedTask.dataset.id);
+    
+    setTimeout(() => {
+        draggedTask.classList.add('dragging');
+    }, 0);
 }
 
 function handleDragOver(e) {
@@ -322,10 +384,22 @@ function handleDragOver(e) {
     return false;
 }
 
+function handleDragEnter(e) {
+    this.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+}
+
 async function handleDrop(e) {
     e.preventDefault();
     
+    this.classList.remove('drag-over');
+    
     if (!draggedTask) return;
+    
+    draggedTask.classList.remove('dragging');
     
     const newStatus = e.currentTarget.id;
     const taskId = draggedTask.dataset.id;
@@ -339,11 +413,123 @@ async function handleDrop(e) {
         if (error) throw error;
         
         // Recarregar os trabalhos para atualizar a interface
-        loadTasks();
+        await loadTasks();
+        updateColumnCounts();
+        
+        showToast('Status do trabalho atualizado.', 'success');
     } catch (error) {
         console.error('Erro ao atualizar status:', error);
-        alert('Não foi possível mover o trabalho.');
+        showToast('Não foi possível mover o trabalho.', 'error');
     }
     
     draggedTask = null;
 }
+
+// Função para exibir toast de notificação
+function showToast(message, type = 'info') {
+    // Verifica se já existe um toast e remove
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    // Cria um novo toast
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div class="toast-content">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Exibe o toast
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    // Remove o toast após 3 segundos
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, 3000);
+}
+
+// Adiciona estilos para o toast dinamicamente
+(function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            max-width: 300px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .toast-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .light-mode .toast.success {
+            background-color: #ecfdf5;
+            color: #047857;
+            border-left: 4px solid #10b981;
+        }
+        
+        .light-mode .toast.error {
+            background-color: #fef2f2;
+            color: #b91c1c;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .light-mode .toast.info {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .dark-mode .toast.success {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border-left: 4px solid #10b981;
+        }
+        
+        .dark-mode .toast.error {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .dark-mode .toast.info {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        @media (max-width: 768px) {
+            .toast {
+                left: 20px;
+                right: 20px;
+                max-width: calc(100% - 40px);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+})();
