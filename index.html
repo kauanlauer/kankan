@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanban Faculdade</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="light-mode">
+    <header>
+        <h1>Kanban Faculdade</h1>
+        <div class="header-actions">
+            <button id="theme-toggle" class="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button id="add-task-btn" class="add-btn">+ Novo Trabalho</button>
+        </div>
+    </header>
+
+    <main class="board">
+        <div class="column" id="nao_comecou">
+            <h2>Não Começou</h2>
+            <div class="tasks-container"></div>
+        </div>
+        <div class="column" id="em_andamento">
+            <h2>Em Andamento</h2>
+            <div class="tasks-container"></div>
+        </div>
+        <div class="column" id="finalizado">
+            <h2>Finalizado</h2>
+            <div class="tasks-container"></div>
+        </div>
+    </main>
+
+    <!-- Modal para adicionar/editar trabalho -->
+    <div class="modal" id="task-modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title">Novo Trabalho</h2>
+            <form id="task-form">
+                <input type="hidden" id="task-id">
+                <div class="form-group">
+                    <label for="materia">Matéria:</label>
+                    <input type="text" id="materia" required>
+                </div>
+                <div class="form-group">
+                    <label for="titulo">Título:</label>
+                    <input type="text" id="titulo" required>
+                </div>
+                <div class="form-group">
+                    <label for="descricao">Descrição:</label>
+                    <textarea id="descricao"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="status">Status:</label>
+                    <select id="status">
+                        <option value="nao_comecou">Não Começou</option>
+                        <option value="em_andamento">Em Andamento</option>
+                        <option value="finalizado">Finalizado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="data-entrega">Data de Entrega:</label>
+                    <input type="datetime-local" id="data-entrega">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="save-btn">Salvar</button>
+                    <button type="button" class="cancel-btn" id="cancel-btn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de confirmação para exclusão -->
+    <div class="modal" id="confirm-modal">
+        <div class="modal-content">
+            <h2>Confirmação</h2>
+            <p>Tem certeza que deseja excluir este trabalho?</p>
+            <div class="form-actions">
+                <button id="confirm-delete" class="delete-btn">Sim, excluir</button>
+                <button id="cancel-delete" class="cancel-btn">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+</body>
+</html>
